@@ -75,7 +75,11 @@ public class UserController {
     @ResponseBody
     public String updateUser(Model model, User user){
 
-        if (userRepository.getUserByUsername(user.getUsername()) != null){
+        boolean userHasBeenChanged = (!userRepository.findOne(user.getId()).getUsername().equals(user.getUsername()));
+
+        User userToValidateDuplication = userRepository.getUserByUsername(user.getUsername());
+
+        if (userToValidateDuplication != null && !userToValidateDuplication.getId().equals(user.getId())){
             return "<script>alert(\"Taki użytkownik już istnieje!\"); window.location = \"/profil\"</script>";
         }
 
@@ -91,11 +95,16 @@ public class UserController {
         UserRole userRole = userRoleRepository.findOne(user.getId());
 
         userRole.setUsername(user.getUsername());
-        //userRole.setRole("ROLE_USER");
 
         userRoleRepository.save(userRole);
 
-        return "Updated";
+        if (userHasBeenChanged){
+            SecurityContextHolder.clearContext();
+
+            return "<script>alert(\"Profil zaktualizowany - zaloguj się za pomocą nowej nazwy użytkownika\"); window.location = \"/profil\"</script>";
+                    }
+
+        return "<script>alert(\"Profil zaktualizowany\"); window.location = \"/profil\"</script>";
     }
 
     @GetMapping("/haslo")
